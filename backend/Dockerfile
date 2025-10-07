@@ -1,26 +1,15 @@
-FROM python:3.11-slim-bookworm
+FROM python:3.13.2
 
-WORKDIR /app
+RUN apt update && apt install -y wireguard iproute2 iputils-ping net-tools
 
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /v1/src
 
-COPY backend/requirements.txt .
-
+COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ .
-
-COPY frontend/dist/ backend/app/static/
-
-RUN useradd -m -u 1000 user && \
-    chown -R user:user /app
-
-USER user
+COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "v1.src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

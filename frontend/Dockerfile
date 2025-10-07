@@ -1,20 +1,28 @@
-FROM node:18-alpine as build
+# Stage 0: Build stage
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+# Копируем файлы зависимостей
+COPY package.json package-lock.json ./
 
-RUN npm ci --only=production
+# Устанавливаем зависимости
+RUN npm ci
 
+# Копируем исходный код
 COPY . .
 
+# Собираем приложение
 RUN npm run build
 
+# Stage 1: Production stage
 FROM nginx:alpine
 
-COPY --from=build /app/build /usr/share/nginx/html
+# Копируем собранное приложение
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Копируем конфигурацию nginx (если файл существует)
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
